@@ -281,6 +281,11 @@ class ZMQChannelsHandler(AuthenticatedZMQStreamHandler):
             msg = deserialize_binary_message(msg)
         else:
             msg = json.loads(msg)
+
+        # DEBUG ONLY
+        _msg_type = msg['header']['msg_type']
+        self.log.info(f'on_message received: {_msg_type}\n{json.dumps(msg, indent=4, sort_keys=True, default=str)}')
+
         channel = msg.pop('channel', None)
         if channel is None:
             self.log.warn("No channel specified, assuming shell: %s", msg)
@@ -306,6 +311,14 @@ class ZMQChannelsHandler(AuthenticatedZMQStreamHandler):
             
         channel = getattr(stream, 'channel', None)
         msg_type = msg['header']['msg_type']
+
+        # DEBUG ONLY
+        if msg_type != 'status':
+            msg_copy = msg.copy()
+            msg_copy['channel'] = channel
+            self.log.info(
+                f'_on_zmq_reply received: {msg_type}\n{json.dumps(msg_copy, indent=4, sort_keys=True, default=str)}')
+
         if channel == 'iopub' and msg_type not in {'status', 'comm_open', 'execute_input'}:
             
             # Remove the counts queued for removal.
